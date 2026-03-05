@@ -1,32 +1,23 @@
+<div align="center">
+
 # hooksense
 
-CLI tool for [HookSense](https://hooksense.com) — capture, inspect, and forward webhooks to your local development server.
+**Capture, inspect, and forward webhooks to your local dev server.**
 
-## Install
+[![npm version](https://img.shields.io/npm/v/hooksense.svg)](https://www.npmjs.com/package/hooksense)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-```bash
-npm install -g hooksense
-```
+[Website](https://hooksense.com) · [Dashboard](https://hooksense.com) · [Issues](https://github.com/ozers/hooksense-cli/issues)
 
-Or use directly with npx:
+</div>
+
+---
+
+No signup required. Get a public webhook URL in seconds and forward requests to `localhost`.
 
 ```bash
 npx hooksense listen --forward http://localhost:3000/webhook
 ```
-
-## Usage
-
-### Listen for webhooks
-
-```bash
-# Create a new endpoint and forward webhooks to localhost
-hooksense listen --forward http://localhost:3000/webhook
-
-# Listen on an existing endpoint
-hooksense listen <slug> --forward http://localhost:3000/webhook
-```
-
-Output:
 
 ```
   HookSense — Webhook forwarder
@@ -40,30 +31,75 @@ Output:
   12:34:12  PUT     text/plain            128B   → 404 Not Found (5ms)
 ```
 
-### Create an endpoint
+## Features
+
+- **Instant webhook URL** — no signup, no config files
+- **Real-time forwarding** — webhooks hit your localhost in milliseconds
+- **Auto-reconnect** — drops connection? reconnects with backoff automatically
+- **Colored output** — method, content-type, size, response status at a glance
+- **Works with any framework** — Express, Next.js, FastAPI, Rails, anything on localhost
+
+## Install
+
+```bash
+npm install -g hooksense
+```
+
+Or run directly:
+
+```bash
+npx hooksense listen --forward http://localhost:3000/webhook
+```
+
+## Commands
+
+### `hooksense listen [slug]`
+
+Listen for incoming webhooks and optionally forward them.
+
+```bash
+# Create new endpoint + forward
+hooksense listen --forward http://localhost:3000/webhook
+
+# Use existing endpoint
+hooksense listen abc12345 --forward http://localhost:3000/webhook
+
+# Just listen (no forwarding)
+hooksense listen abc12345
+```
+
+### `hooksense create`
+
+Create a new webhook endpoint and print the URL.
 
 ```bash
 hooksense create
 ```
 
-### Authentication
+### `hooksense login` / `hooksense logout`
+
+Authenticate for more endpoints and longer data retention.
 
 ```bash
-# Log in for more endpoints and longer retention
 hooksense login
-
-# Log out
 hooksense logout
 ```
 
-### Options
+## Options
 
 | Flag | Description |
 |------|-------------|
-| `--forward <url>` | URL to forward incoming webhooks to |
+| `-f, --forward <url>` | URL to forward incoming webhooks to |
 | `--api <url>` | Override API server URL |
 
-You can also set `HOOKSENSE_API` environment variable to override the default API URL.
+Set `HOOKSENSE_API` environment variable to change the default API URL.
+
+## Use Cases
+
+- **Stripe webhooks** — test payment events locally
+- **GitHub webhooks** — debug push/PR events on your machine
+- **Shopify webhooks** — develop apps without deploying
+- **Any webhook provider** — works with everything that sends HTTP requests
 
 ## License
 
