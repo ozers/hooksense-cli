@@ -40,7 +40,7 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
         if (msg.type !== "new_request") return;
 
         const req = msg.request;
-        log.request(req.method, req.contentType, req.sizeBytes);
+        log.request(req.method, req.contentType, req.sizeBytes, req.sourceIp);
 
         if (forwardUrl) {
           const result = await forwardRequest(req, forwardUrl);
