@@ -63,13 +63,17 @@ export const log = {
     console.log();
   },
 
-  request(method: string, contentType: string | null, sizeBytes: number, sourceIp: string | null) {
-    const ct = contentType || pc.dim("—");
+  request(method: string, contentType: string | null, sizeBytes: number) {
     const size = formatBytes(sizeBytes);
-    const ip = sourceIp ? pc.dim(`${sourceIp}`) : "";
-    process.stdout.write(
-      `  ${timestamp()}  ${methodColor(method.padEnd(6))}  ${ct.padEnd(20)}  ${pc.dim(size.padStart(8))}  ${ip ? ip + "  " : ""}`
-    );
+    if (contentType) {
+      process.stdout.write(
+        `  ${timestamp()}  ${methodColor(method.padEnd(4))}  ${pc.dim(contentType)}  ${pc.dim(size)}  `
+      );
+    } else {
+      process.stdout.write(
+        `  ${timestamp()}  ${methodColor(method.padEnd(4))}  ${pc.dim(size)}  `
+      );
+    }
   },
 
   requestBody(body: string, contentType: string | null) {

@@ -87,7 +87,7 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
           return;
         }
 
-        log.request(req.method, req.contentType, req.sizeBytes, req.sourceIp);
+        log.request(req.method, req.contentType, req.sizeBytes);
 
         if (options.verbose && req.body) {
           console.log();
