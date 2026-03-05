@@ -1,70 +1,85 @@
-import * as readline from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
-import { login as apiLogin } from "../lib/api.js";
-import { setToken, clearToken } from "../lib/config.js";
+import * as http from "node:http";
+import { setToken, clearToken, getApiUrl } from "../lib/config.js";
 import { log } from "../ui/logger.js";
 
 export async function loginCommand() {
-  const rl = readline.createInterface({ input, output });
+  const apiUrl = getApiUrl();
 
-  try {
-    const email = await rl.question("  Email: ");
-    // Use raw mode for password input
-    const password = await new Promise<string>((resolve) => {
-      process.stdout.write("  Password: ");
-      const chars: string[] = [];
+  // Start a local HTTP server to receive the callback
+  const server = http.createServer((req, res) => {
+    const url = new URL(req.url || "/", `http://localhost`);
 
-      if (process.stdin.isTTY) {
-        process.stdin.setRawMode(true);
+    if (url.pathname === "/callback") {
+      const token = url.searchParams.get("token");
+
+      if (token) {
+        setToken(token);
+        res.writeHead(200, { "Content-Type": "text/html" });
+        res.end(`
+          <html>
+            <body style="background:#0a0a0a;color:#e4e4e7;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+              <div style="text-align:center">
+                <h1 style="font-size:24px;margin-bottom:8px">&#10003; Logged in to HookSense</h1>
+                <p style="color:#71717a">You can close this tab and return to the terminal.</p>
+              </div>
+            </body>
+          </html>
+        `);
+        log.success("Logged in successfully");
+        console.log();
+        setTimeout(() => { server.close(); process.exit(0); }, 500);
+      } else {
+        res.writeHead(400, { "Content-Type": "text/html" });
+        res.end(`
+          <html>
+            <body style="background:#0a0a0a;color:#ef4444;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+              <div style="text-align:center">
+                <h1 style="font-size:24px">Login failed</h1>
+                <p style="color:#71717a">No token received. Please try again.</p>
+              </div>
+            </body>
+          </html>
+        `);
+        log.error("Login failed — no token received");
+        setTimeout(() => { server.close(); process.exit(1); }, 500);
       }
-      process.stdin.resume();
-      process.stdin.setEncoding("utf-8");
+    } else {
+      res.writeHead(404);
+      res.end();
+    }
+  });
 
-      const onData = (char: string) => {
-        switch (char) {
-          case "\n":
-          case "\r":
-          case "\u0004": // Ctrl+D
-            process.stdin.setRawMode?.(false);
-            process.stdin.pause();
-            process.stdin.removeListener("data", onData);
-            console.log();
-            resolve(chars.join(""));
-            break;
-          case "\u0003": // Ctrl+C
-            process.stdin.setRawMode?.(false);
-            console.log();
-            process.exit(0);
-            break;
-          case "\u007f": // Backspace
-            if (chars.length > 0) {
-              chars.pop();
-              process.stdout.write("\b \b");
-            }
-            break;
-          default:
-            chars.push(char);
-            process.stdout.write("*");
-        }
-      };
+  // Listen on a random available port
+  server.listen(0, () => {
+    const addr = server.address();
+    if (!addr || typeof addr === "string") {
+      log.error("Failed to start local server");
+      process.exit(1);
+    }
 
-      process.stdin.on("data", onData);
+    const port = addr.port;
+    const loginUrl = `${apiUrl}/api/auth/cli?port=${port}`;
+
+    console.log();
+    log.info("Opening browser to log in...");
+    log.dim(loginUrl);
+    console.log();
+
+    // Open browser
+    import("node:child_process").then(({ exec }) => {
+      const cmd = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
+      exec(`${cmd} "${loginUrl}"`);
     });
 
-    console.log();
-    log.info("Logging in...");
+    log.info("Waiting for login...");
 
-    const { token } = await apiLogin(email, password);
-    setToken(token);
-
-    log.success("Logged in successfully");
-    console.log();
-  } catch (err) {
-    log.error(err instanceof Error ? err.message : "Login failed");
-    process.exit(1);
-  } finally {
-    rl.close();
-  }
+    // Timeout after 2 minutes
+    setTimeout(() => {
+      log.error("Login timed out");
+      server.close();
+      process.exit(1);
+    }, 120_000);
+  });
 }
 
 export async function logoutCommand() {
