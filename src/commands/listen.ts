@@ -1,7 +1,7 @@
 import { createEndpoint, getEndpoint, type WebhookRequest } from "../lib/api.js";
 import { connectWebSocket } from "../lib/ws.js";
 import { forwardRequest } from "../lib/forward.js";
-import { getApiUrl } from "../lib/config.js";
+import { getApiUrl, getLastSlug, setLastSlug } from "../lib/config.js";
 import { log } from "../ui/logger.js";
 
 interface ListenOptions {
@@ -39,13 +39,32 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
     let endpointSlug: string;
 
     if (slug) {
+      // Explicit slug provided
       const endpoint = await getEndpoint(slug);
       endpointSlug = endpoint.slug;
     } else {
-      log.info("Creating new endpoint...");
-      const endpoint = await createEndpoint();
-      endpointSlug = endpoint.slug;
+      // Try reusing last endpoint first
+      const lastSlug = getLastSlug();
+      if (lastSlug) {
+        try {
+          const endpoint = await getEndpoint(lastSlug);
+          endpointSlug = endpoint.slug;
+          log.info(`Reusing endpoint ${endpointSlug}`);
+        } catch {
+          // Last endpoint expired or gone, create new
+          log.info("Previous endpoint expired, creating new one...");
+          const endpoint = await createEndpoint();
+          endpointSlug = endpoint.slug;
+        }
+      } else {
+        log.info("Creating new endpoint...");
+        const endpoint = await createEndpoint();
+        endpointSlug = endpoint.slug;
+      }
     }
+
+    // Remember this slug for next time
+    setLastSlug(endpointSlug);
 
     const apiUrl = getApiUrl();
     const endpointUrl = `${apiUrl}/w/${endpointSlug}`;

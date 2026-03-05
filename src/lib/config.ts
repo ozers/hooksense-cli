@@ -3,6 +3,7 @@ import Conf from "conf";
 interface HookSenseConfig {
   apiUrl: string;
   token: string | null;
+  lastSlug: string | null;
 }
 
 const config = new Conf<HookSenseConfig>({
@@ -10,6 +11,7 @@ const config = new Conf<HookSenseConfig>({
   defaults: {
     apiUrl: "https://hooksense.com",
     token: null,
+    lastSlug: null,
   },
 });
 
@@ -31,6 +33,14 @@ export function setToken(token: string): void {
 
 export function clearToken(): void {
   config.set("token", null);
+}
+
+export function getLastSlug(): string | null {
+  return config.get("lastSlug");
+}
+
+export function setLastSlug(slug: string): void {
+  config.set("lastSlug", slug);
 }
 
 export { config };
