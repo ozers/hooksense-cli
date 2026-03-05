@@ -140,6 +140,11 @@ export const log = {
     console.error(`  ${pc.red("✗")} ${msg}`);
   },
 
+  previousRequests(count: number) {
+    console.log(`  ${pc.dim("···")} ${pc.dim(`${count} previous request${count !== 1 ? "s" : ""}`)}`);
+    console.log();
+  },
+
   dim(msg: string) {
     console.log(`  ${pc.dim(msg)}`);
   },

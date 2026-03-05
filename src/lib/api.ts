@@ -95,6 +95,12 @@ export async function login(email: string, password: string): Promise<{ token: s
   return { token };
 }
 
+export async function getRequests(slug: string, limit = 50): Promise<WebhookRequest[]> {
+  const res = await apiFetch(`/api/endpoints/${slug}/requests?limit=${limit}`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
 export async function listEndpoints(): Promise<Endpoint[]> {
   const res = await apiFetch("/api/endpoints");
   if (!res.ok) {

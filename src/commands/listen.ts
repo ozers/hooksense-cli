@@ -1,4 +1,4 @@
-import { createEndpoint, getEndpoint, ApiError, type WebhookRequest } from "../lib/api.js";
+import { createEndpoint, getEndpoint, getRequests, ApiError, type WebhookRequest } from "../lib/api.js";
 import { connectWebSocket } from "../lib/ws.js";
 import { forwardRequest } from "../lib/forward.js";
 import { getApiUrl, getLastSlug, setLastSlug, getToken } from "../lib/config.js";
@@ -70,6 +70,14 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
     const endpointUrl = `${apiUrl}/w/${endpointSlug}`;
 
     log.banner(endpointUrl, forwardUrl, filter);
+
+    // Show previous requests count if reusing endpoint
+    try {
+      const previousReqs = await getRequests(endpointSlug);
+      if (previousReqs.length > 0) {
+        log.previousRequests(previousReqs.length);
+      }
+    } catch {}
 
     // Connect WebSocket
     const ws = connectWebSocket({
