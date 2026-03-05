@@ -1,4 +1,4 @@
-import { createEndpoint, getEndpoint, getRequests, ApiError, type WebhookRequest } from "../lib/api.js";
+import { createEndpoint, getEndpoint, getRequests, listEndpoints, ApiError, type WebhookRequest } from "../lib/api.js";
 import { connectWebSocket } from "../lib/ws.js";
 import { forwardRequest } from "../lib/forward.js";
 import { getApiUrl, getLastSlug, setLastSlug, getToken } from "../lib/config.js";
@@ -10,6 +10,7 @@ interface ListenOptions {
   api?: string;
   filter?: string;
   verbose?: boolean;
+  new?: boolean;
 }
 
 export async function listenCommand(slug: string | undefined, options: ListenOptions) {
@@ -42,8 +43,47 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
       // Explicit slug provided
       const endpoint = await getEndpoint(slug);
       endpointSlug = endpoint.slug;
+    } else if (options.new) {
+      // Force create new endpoint
+      log.info("Creating new endpoint...");
+      const endpoint = await createEndpoint();
+      endpointSlug = endpoint.slug;
+    } else if (getToken()) {
+      // Logged in — try to reuse an existing endpoint from account
+      try {
+        const endpoints = await listEndpoints();
+        if (endpoints.length > 0) {
+          // Pick the most recently created endpoint
+          const latest = endpoints[0];
+          endpointSlug = latest.slug;
+          log.info(`Using endpoint ${endpointSlug} from your account`);
+          if (endpoints.length > 1) {
+            log.dim(`${endpoints.length} endpoints on your account — use hooksense listen <slug> to pick another`);
+          }
+        } else {
+          log.info("No endpoints found, creating new one...");
+          const endpoint = await createEndpoint();
+          endpointSlug = endpoint.slug;
+        }
+      } catch {
+        // Fallback to lastSlug or create new
+        const lastSlug = getLastSlug();
+        if (lastSlug) {
+          try {
+            const endpoint = await getEndpoint(lastSlug);
+            endpointSlug = endpoint.slug;
+            log.info(`Reusing endpoint ${endpointSlug}`);
+          } catch {
+            const endpoint = await createEndpoint();
+            endpointSlug = endpoint.slug;
+          }
+        } else {
+          const endpoint = await createEndpoint();
+          endpointSlug = endpoint.slug;
+        }
+      }
     } else {
-      // Try reusing last endpoint first
+      // Anonymous — use lastSlug or create new
       const lastSlug = getLastSlug();
       if (lastSlug) {
         try {
@@ -51,7 +91,6 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
           endpointSlug = endpoint.slug;
           log.info(`Reusing endpoint ${endpointSlug}`);
         } catch {
-          // Last endpoint expired or gone, create new
           log.info("Previous endpoint expired, creating new one...");
           const endpoint = await createEndpoint();
           endpointSlug = endpoint.slug;

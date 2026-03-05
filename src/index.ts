@@ -29,6 +29,7 @@ program
   .option("-p, --port <port>", "Shorthand for --forward http://localhost:<port>")
   .option("--filter <method>", "Only forward requests with this HTTP method (e.g. POST)")
   .option("-v, --verbose", "Show request and response bodies")
+  .option("-n, --new", "Force create a new endpoint")
   .action(listenCommand);
 
 program
