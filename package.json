@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "description": "CLI tool for HookSense — capture, inspect, and forward webhooks",
   "type": "module",
+  "main": "./dist/index.js",
   "bin": {
-    "hooksense": "./dist/index.js"
+    "hooksense": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
