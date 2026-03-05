@@ -1,0 +1,36 @@
+{
+  "name": "hooksense",
+  "version": "0.1.0",
+  "description": "CLI tool for HookSense — capture, inspect, and forward webhooks",
+  "type": "module",
+  "bin": {
+    "hooksense": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "webhook",
+    "cli",
+    "hooksense",
+    "forwarding",
+    "tunnel"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "conf": "^13.0.1",
+    "picocolors": "^1.1.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
