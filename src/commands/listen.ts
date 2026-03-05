@@ -1,7 +1,7 @@
-import { createEndpoint, getEndpoint, type WebhookRequest } from "../lib/api.js";
+import { createEndpoint, getEndpoint, ApiError, type WebhookRequest } from "../lib/api.js";
 import { connectWebSocket } from "../lib/ws.js";
 import { forwardRequest } from "../lib/forward.js";
-import { getApiUrl, getLastSlug, setLastSlug } from "../lib/config.js";
+import { getApiUrl, getLastSlug, setLastSlug, getToken } from "../lib/config.js";
 import { log } from "../ui/logger.js";
 
 interface ListenOptions {
@@ -127,7 +127,26 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
     process.on("SIGINT", shutdown);
     process.on("SIGTERM", shutdown);
   } catch (err) {
-    log.error(err instanceof Error ? err.message : "Failed to start listener");
+    if (err instanceof ApiError) {
+      if (err.status === 429) {
+        log.error("Rate limit reached");
+        if (!getToken()) {
+          console.log();
+          log.info("Log in to remove rate limits:");
+          log.info("  hooksense login");
+        } else {
+          log.info("Wait a few minutes and try again.");
+        }
+      } else if (err.status === 403 && err.upgrade) {
+        log.error("Endpoint limit reached on your current plan");
+        console.log();
+        log.info("Upgrade at https://hooksense.com/pricing");
+      } else {
+        log.error(err.message);
+      }
+    } else {
+      log.error(err instanceof Error ? err.message : "Failed to start listener");
+    }
     process.exit(1);
   }
 }

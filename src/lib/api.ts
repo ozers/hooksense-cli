@@ -20,6 +20,17 @@ interface WebhookRequest {
   receivedAt: string;
 }
 
+export class ApiError extends Error {
+  status: number;
+  upgrade: boolean;
+
+  constructor(message: string, status: number, upgrade = false) {
+    super(message);
+    this.status = status;
+    this.upgrade = upgrade;
+  }
+}
+
 async function apiFetch(path: string, options?: RequestInit): Promise<Response> {
   const apiUrl = getApiUrl();
   const token = getToken();
@@ -45,7 +56,7 @@ export async function createEndpoint(): Promise<Endpoint> {
   const res = await apiFetch("/api/endpoints", { method: "POST" });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || "Failed to create endpoint");
+    throw new ApiError(data.error || "Failed to create endpoint", res.status, data.upgrade);
   }
   return res.json();
 }
