@@ -79,10 +79,13 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
       }
     } catch {}
 
+    // Queue to serialize request output (prevents interleaved lines)
+    let processing = Promise.resolve();
+
     // Connect WebSocket
     const ws = connectWebSocket({
       slug: endpointSlug,
-      onMessage: async (data) => {
+      onMessage: (data) => {
         const msg = data as { type: string; request: WebhookRequest };
         if (msg.type !== "new_request") return;
 
@@ -95,29 +98,31 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
           return;
         }
 
-        log.request(req.method, req.contentType, req.sizeBytes);
+        processing = processing.then(async () => {
+          log.request(req.method, req.contentType, req.sizeBytes);
 
-        if (options.verbose && req.body) {
-          console.log();
-          log.requestBody(req.body, req.contentType);
-        }
-
-        if (forwardUrl) {
-          const result = await forwardRequest(req, forwardUrl);
-          if (result.error) {
-            failed++;
-            log.forwardError(result.error);
-          } else {
-            forwarded++;
-            log.forward(result.status, result.statusText, result.durationMs);
-
-            if (options.verbose && result.responseBody) {
-              log.responseBody(result.responseBody);
-            }
+          if (options.verbose && req.body) {
+            console.log();
+            log.requestBody(req.body, req.contentType);
           }
-        } else {
-          console.log();
-        }
+
+          if (forwardUrl) {
+            const result = await forwardRequest(req, forwardUrl);
+            if (result.error) {
+              failed++;
+              log.forwardError(result.error);
+            } else {
+              forwarded++;
+              log.forward(result.status, result.statusText, result.durationMs);
+
+              if (options.verbose && result.responseBody) {
+                log.responseBody(result.responseBody);
+              }
+            }
+          } else {
+            console.log();
+          }
+        });
       },
       onDisconnect: () => {
         log.disconnected();
