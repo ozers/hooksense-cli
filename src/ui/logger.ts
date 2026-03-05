@@ -64,16 +64,11 @@ export const log = {
   },
 
   request(method: string, contentType: string | null, sizeBytes: number) {
+    const ct = contentType || "—";
     const size = formatBytes(sizeBytes);
-    if (contentType) {
-      process.stdout.write(
-        `  ${timestamp()}  ${methodColor(method.padEnd(4))}  ${pc.dim(contentType)}  ${pc.dim(size)}  `
-      );
-    } else {
-      process.stdout.write(
-        `  ${timestamp()}  ${methodColor(method.padEnd(4))}  ${pc.dim(size)}  `
-      );
-    }
+    process.stdout.write(
+      `  ${timestamp()}  ${methodColor(method.padEnd(4))}  ${pc.dim(ct)}  ${pc.dim(size)}  `
+    );
   },
 
   requestBody(body: string, contentType: string | null) {
