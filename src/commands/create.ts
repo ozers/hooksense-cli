@@ -13,7 +13,7 @@ export async function createCommand() {
     console.log();
     console.log(`  URL: ${url}`);
     console.log();
-    log.dim(`Use: hooksense listen ${endpoint.slug} --forward http://localhost:3000/webhook`);
+    log.dim(`Use: hooksense listen ${endpoint.slug} -p 3000`);
     console.log();
   } catch (err) {
     if (err instanceof ApiError) {
