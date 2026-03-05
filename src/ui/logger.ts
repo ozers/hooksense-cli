@@ -48,7 +48,9 @@ function truncate(str: string, max: number): string {
 export const log = {
   banner(endpointUrl: string, forwardUrl?: string, filter?: string | null) {
     console.log();
-    console.log(`  ${pc.bold(pc.cyan("HookSense"))} ${pc.dim("— Webhook forwarder")}`);
+    console.log(pc.cyan(`   ╦ ╦╔═╗╔═╗╦╔═╔═╗╔═╗╔╗╔╔═╗╔═╗`));
+    console.log(pc.cyan(`   ╠═╣║ ║║ ║╠╩╗╚═╗║╣ ║║║╚═╗║╣ `));
+    console.log(pc.cyan(`   ╩ ╩╚═╝╚═╝╩ ╩╚═╝╚═╝╝╚╝╚═╝╚═╝`));
     console.log();
     console.log(`  ${pc.dim("Endpoint:")}  ${pc.white(endpointUrl)}`);
     if (forwardUrl) {
