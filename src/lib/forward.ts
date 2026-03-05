@@ -5,6 +5,7 @@ export interface ForwardResult {
   statusText: string;
   durationMs: number;
   error?: string;
+  responseBody?: string;
 }
 
 export async function forwardRequest(
@@ -49,10 +50,16 @@ export async function forwardRequest(
       body: request.method !== "GET" && request.method !== "HEAD" ? request.body : undefined,
     });
 
+    let responseBody: string | undefined;
+    try {
+      responseBody = await res.text();
+    } catch {}
+
     return {
       status: res.status,
       statusText: res.statusText,
       durationMs: Date.now() - start,
+      responseBody,
     };
   } catch (err) {
     return {

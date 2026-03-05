@@ -84,4 +84,13 @@ export async function login(email: string, password: string): Promise<{ token: s
   return { token };
 }
 
+export async function listEndpoints(): Promise<Endpoint[]> {
+  const res = await apiFetch("/api/endpoints");
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to list endpoints");
+  }
+  return res.json();
+}
+
 export type { Endpoint, WebhookRequest };

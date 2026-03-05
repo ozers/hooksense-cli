@@ -6,22 +6,42 @@ import { log } from "../ui/logger.js";
 
 interface ListenOptions {
   forward?: string;
+  port?: string;
   api?: string;
+  filter?: string;
+  verbose?: boolean;
 }
 
 export async function listenCommand(slug: string | undefined, options: ListenOptions) {
-  const forwardUrl = options.forward;
+  // Resolve forward URL from --forward or --port
+  let forwardUrl = options.forward;
+  if (!forwardUrl && options.port) {
+    forwardUrl = `http://localhost:${options.port}`;
+  }
+
+  // Validate filter
+  const filter = options.filter?.toUpperCase() || null;
+  const validMethods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
+  if (filter && !validMethods.includes(filter)) {
+    log.error(`Invalid method filter: ${filter}`);
+    process.exit(1);
+  }
+
+  // Stats tracking
+  let totalRequests = 0;
+  let forwarded = 0;
+  let failed = 0;
+  let skipped = 0;
+  const startTime = Date.now();
 
   try {
     // Resolve or create endpoint
     let endpointSlug: string;
 
     if (slug) {
-      // Verify endpoint exists
       const endpoint = await getEndpoint(slug);
       endpointSlug = endpoint.slug;
     } else {
-      // Create a new endpoint
       log.info("Creating new endpoint...");
       const endpoint = await createEndpoint();
       endpointSlug = endpoint.slug;
@@ -30,7 +50,7 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
     const apiUrl = getApiUrl();
     const endpointUrl = `${apiUrl}/w/${endpointSlug}`;
 
-    log.banner(endpointUrl, forwardUrl);
+    log.banner(endpointUrl, forwardUrl, filter);
 
     // Connect WebSocket
     const ws = connectWebSocket({
@@ -40,17 +60,35 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
         if (msg.type !== "new_request") return;
 
         const req = msg.request;
+        totalRequests++;
+
+        // Apply method filter
+        if (filter && req.method !== filter) {
+          skipped++;
+          return;
+        }
+
         log.request(req.method, req.contentType, req.sizeBytes, req.sourceIp);
+
+        if (options.verbose && req.body) {
+          console.log();
+          log.requestBody(req.body, req.contentType);
+        }
 
         if (forwardUrl) {
           const result = await forwardRequest(req, forwardUrl);
           if (result.error) {
+            failed++;
             log.forwardError(result.error);
           } else {
+            forwarded++;
             log.forward(result.status, result.statusText, result.durationMs);
+
+            if (options.verbose && result.responseBody) {
+              log.responseBody(result.responseBody);
+            }
           }
         } else {
-          // Just log that we received it
           console.log();
         }
       },
@@ -59,18 +97,16 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
       },
     });
 
-    // Handle Ctrl+C
-    process.on("SIGINT", () => {
+    function shutdown() {
       console.log();
-      log.dim("Shutting down...");
+      const duration = Math.round((Date.now() - startTime) / 1000);
+      log.summary(totalRequests, forwarded, failed, skipped, duration);
       ws.close();
       process.exit(0);
-    });
+    }
 
-    process.on("SIGTERM", () => {
-      ws.close();
-      process.exit(0);
-    });
+    process.on("SIGINT", shutdown);
+    process.on("SIGTERM", shutdown);
   } catch (err) {
     log.error(err instanceof Error ? err.message : "Failed to start listener");
     process.exit(1);

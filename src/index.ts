@@ -4,6 +4,8 @@ import { Command } from "commander";
 import { listenCommand } from "./commands/listen.js";
 import { createCommand } from "./commands/create.js";
 import { loginCommand, logoutCommand } from "./commands/auth.js";
+import { listCommand } from "./commands/list.js";
+import { inspectCommand } from "./commands/inspect.js";
 import { setApiUrl } from "./lib/config.js";
 
 const program = new Command();
@@ -24,12 +26,27 @@ program
   .command("listen [slug]")
   .description("Listen for webhooks and optionally forward them to a local URL")
   .option("-f, --forward <url>", "URL to forward incoming webhooks to")
+  .option("-p, --port <port>", "Shorthand for --forward http://localhost:<port>")
+  .option("--filter <method>", "Only forward requests with this HTTP method (e.g. POST)")
+  .option("-v, --verbose", "Show request and response bodies")
   .action(listenCommand);
 
 program
   .command("create")
   .description("Create a new webhook endpoint")
   .action(createCommand);
+
+program
+  .command("list")
+  .alias("ls")
+  .description("List your endpoints")
+  .action(listCommand);
+
+program
+  .command("inspect <slug>")
+  .alias("open")
+  .description("Open endpoint dashboard in the browser")
+  .action(inspectCommand);
 
 program
   .command("login")
