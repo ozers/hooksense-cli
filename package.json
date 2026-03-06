@@ -1,6 +1,6 @@
 {
   "name": "hooksense",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "CLI tool for HookSense — capture, inspect, and forward webhooks",
   "type": "module",
   "main": "./dist/index.js",
