@@ -110,4 +110,23 @@ export async function listEndpoints(): Promise<Endpoint[]> {
   return res.json();
 }
 
+interface ReplayResult {
+  status: number;
+  statusText: string;
+  durationMs: number;
+  responseBody?: string;
+}
+
+export async function replayRequest(id: string, targetUrl: string): Promise<ReplayResult> {
+  const res = await apiFetch(`/api/requests/${id}/replay`, {
+    method: "POST",
+    body: JSON.stringify({ targetUrl }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new ApiError(data.error || "Replay failed", res.status, data.upgrade);
+  }
+  return res.json();
+}
+
 export type { Endpoint, WebhookRequest };

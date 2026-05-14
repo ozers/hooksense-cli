@@ -6,6 +6,7 @@ import { createCommand } from "./commands/create.js";
 import { loginCommand, logoutCommand } from "./commands/auth.js";
 import { listCommand } from "./commands/list.js";
 import { inspectCommand } from "./commands/inspect.js";
+import { replayCommand } from "./commands/replay.js";
 import { setApiUrl } from "./lib/config.js";
 
 const program = new Command();
@@ -13,7 +14,7 @@ const program = new Command();
 program
   .name("hooksense")
   .description("HookSense CLI — capture, inspect, and forward webhooks")
-  .version("0.1.0")
+  .version("0.4.0")
   .option("--api <url>", "API server URL (default: https://hooksense.com)")
   .hook("preAction", (thisCommand) => {
     const apiUrl = thisCommand.opts().api;
@@ -28,9 +29,17 @@ program
   .option("-f, --forward <url>", "URL to forward incoming webhooks to")
   .option("-p, --port <port>", "Shorthand for --forward http://localhost:<port>")
   .option("--filter <method>", "Only forward requests with this HTTP method (e.g. POST)")
+  .option("--latest <n>", "Replay last N stored requests on startup (requires --forward/--port)")
   .option("-v, --verbose", "Show request and response bodies")
   .option("-n, --new", "Force create a new endpoint")
   .action(listenCommand);
+
+program
+  .command("replay <id>")
+  .description("Replay a captured request to a local URL")
+  .option("-f, --forward <url>", "Target URL to replay to")
+  .option("-p, --port <port>", "Shorthand for --forward http://localhost:<port>")
+  .action(replayCommand);
 
 program
   .command("create")

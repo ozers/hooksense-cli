@@ -11,6 +11,7 @@ interface ListenOptions {
   filter?: string;
   verbose?: boolean;
   new?: boolean;
+  latest?: string;
 }
 
 export async function listenCommand(slug: string | undefined, options: ListenOptions) {
@@ -111,12 +112,36 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
     log.banner(endpointUrl, forwardUrl, filter);
 
     // Show previous requests count if reusing endpoint
+    let previousReqs: WebhookRequest[] = [];
     try {
-      const previousReqs = await getRequests(endpointSlug);
+      previousReqs = await getRequests(endpointSlug);
       if (previousReqs.length > 0) {
         log.previousRequests(previousReqs.length);
       }
     } catch {}
+
+    // --latest <N>: replay last N stored requests to the forward target on startup
+    const latestN = options.latest ? parseInt(options.latest, 10) : 0;
+    if (latestN > 0 && forwardUrl && previousReqs.length > 0) {
+      const recent = previousReqs.slice(0, latestN).reverse();
+      log.info(`Replaying last ${recent.length} request${recent.length !== 1 ? "s" : ""}...`);
+      for (const req of recent) {
+        if (filter && req.method !== filter) {
+          skipped++;
+          continue;
+        }
+        totalRequests++;
+        log.request(req.method, req.contentType, req.sizeBytes);
+        const result = await forwardRequest(req, forwardUrl);
+        if (result.error) {
+          failed++;
+          log.forwardError(result.error);
+        } else {
+          forwarded++;
+          log.forward(result.status, result.statusText, result.durationMs);
+        }
+      }
+    }
 
     // Queue to serialize request output (prevents interleaved lines)
     let processing = Promise.resolve();
@@ -189,7 +214,7 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
         } else {
           log.info("Wait a few minutes and try again.");
         }
-      } else if (err.status === 403 && err.upgrade) {
+      } else if ((err.status === 402 || err.status === 403) && err.upgrade) {
         log.error("Endpoint limit reached on your current plan");
         console.log();
         log.info("Upgrade at https://hooksense.com/pricing");
