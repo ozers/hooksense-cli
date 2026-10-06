@@ -16,7 +16,7 @@ const config = new Conf<HookSenseConfig>({
 });
 
 export function getApiUrl(): string {
-  return process.env.HOOKSENSE_API || config.get("apiUrl");
+  return (process.env.HOOKSENSE_API || config.get("apiUrl")).replace(/\/+$/, "");
 }
 
 export function setApiUrl(url: string): void {

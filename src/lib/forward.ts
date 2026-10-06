@@ -18,6 +18,7 @@ export async function forwardRequest(
     // Build headers, filtering out hop-by-hop and infrastructure headers
     const skipHeaders = new Set([
       "host",
+      "content-length",
       "connection",
       "keep-alive",
       "transfer-encoding",
@@ -44,7 +45,13 @@ export async function forwardRequest(
       }
     }
 
-    const res = await fetch(targetUrl, {
+    const url = new URL(targetUrl);
+    for (const [key, value] of Object.entries(request.queryParams ?? {})) {
+      if (!url.searchParams.has(key)) url.searchParams.set(key, value);
+    }
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(30_000),
+      redirect: "manual",
       method: request.method,
       headers,
       body: request.method !== "GET" && request.method !== "HEAD" ? request.body : undefined,

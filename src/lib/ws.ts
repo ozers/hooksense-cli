@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { getApiUrl } from "./config.js";
+import { getApiUrl, getToken } from "./config.js";
 import { log } from "../ui/logger.js";
 
 interface WsOptions {
@@ -7,6 +7,7 @@ interface WsOptions {
   onMessage: (data: unknown) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
+  onFatal?: (message: string) => void;
 }
 
 export function connectWebSocket(options: WsOptions): { close: () => void } {
@@ -20,9 +21,13 @@ export function connectWebSocket(options: WsOptions): { close: () => void } {
     if (closed) return;
 
     const apiUrl = getApiUrl();
-    const wsUrl = apiUrl.replace(/^http/, "ws") + `/ws?slug=${slug}`;
+    const wsUrl = apiUrl.replace(/^http/, "ws") + `/ws?slug=${encodeURIComponent(slug)}`;
 
-    ws = new WebSocket(wsUrl);
+    const token = getToken();
+    ws = new WebSocket(wsUrl, {
+      headers: token ? { Cookie: `token=${token}` } : {},
+      handshakeTimeout: 15_000,
+    });
 
     ws.on("open", () => {
       backoff = 1000;
@@ -38,7 +43,14 @@ export function connectWebSocket(options: WsOptions): { close: () => void } {
       }
     });
 
-    ws.on("close", () => {
+    ws.on("close", (code, reason) => {
+      if (code === 1008) {
+        closed = true;
+        const message = `Subscription rejected: ${reason.toString() || "not authorized"}. Run hooksense login and check the endpoint.`;
+        if (options.onFatal) options.onFatal(message);
+        else log.error(message);
+        return;
+      }
       onDisconnect?.();
       scheduleReconnect();
     });

@@ -1,4 +1,5 @@
-import { replayRequest, ApiError } from "../lib/api.js";
+import { getRequest, ApiError } from "../lib/api.js";
+import { forwardRequest } from "../lib/forward.js";
 import { getToken } from "../lib/config.js";
 import { log } from "../ui/logger.js";
 
@@ -19,7 +20,8 @@ export async function replayCommand(id: string, options: ReplayOptions) {
 
   try {
     log.info(`Replaying request ${id} → ${targetUrl}`);
-    const result = await replayRequest(id, targetUrl);
+    const result = await forwardRequest(await getRequest(id), targetUrl);
+    if (result.error) throw new Error(result.error);
     log.forward(result.status, result.statusText, result.durationMs);
     if (result.responseBody) {
       log.responseBody(result.responseBody);

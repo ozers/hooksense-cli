@@ -47,6 +47,7 @@ async function apiFetch(path: string, options?: RequestInit): Promise<Response> 
   const res = await fetch(`${apiUrl}${path}`, {
     ...options,
     headers,
+    signal: AbortSignal.timeout(30_000),
   });
 
   return res;
@@ -62,10 +63,10 @@ export async function createEndpoint(): Promise<Endpoint> {
 }
 
 export async function getEndpoint(slug: string): Promise<Endpoint> {
-  const res = await apiFetch(`/api/endpoints/${slug}`);
+  const res = await apiFetch(`/api/endpoints/${encodeURIComponent(slug)}`);
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || "Endpoint not found");
+    throw new ApiError(data.error || "Endpoint not found", res.status);
   }
   return res.json();
 }
@@ -96,8 +97,11 @@ export async function login(email: string, password: string): Promise<{ token: s
 }
 
 export async function getRequests(slug: string, limit = 50): Promise<WebhookRequest[]> {
-  const res = await apiFetch(`/api/endpoints/${slug}/requests?limit=${limit}`);
-  if (!res.ok) return [];
+  const res = await apiFetch(`/api/endpoints/${encodeURIComponent(slug)}/requests?limit=${limit}`);
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new ApiError(data.error || "Failed to load requests", res.status);
+  }
   return res.json();
 }
 
@@ -105,26 +109,16 @@ export async function listEndpoints(): Promise<Endpoint[]> {
   const res = await apiFetch("/api/endpoints");
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || "Failed to list endpoints");
+    throw new ApiError(data.error || "Failed to list endpoints", res.status);
   }
   return res.json();
 }
 
-interface ReplayResult {
-  status: number;
-  statusText: string;
-  durationMs: number;
-  responseBody?: string;
-}
-
-export async function replayRequest(id: string, targetUrl: string): Promise<ReplayResult> {
-  const res = await apiFetch(`/api/requests/${id}/replay`, {
-    method: "POST",
-    body: JSON.stringify({ targetUrl }),
-  });
+export async function getRequest(id: string): Promise<WebhookRequest> {
+  const res = await apiFetch(`/api/requests/${encodeURIComponent(id)}`);
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new ApiError(data.error || "Replay failed", res.status, data.upgrade);
+    throw new ApiError(data.error || "Failed to load request", res.status);
   }
   return res.json();
 }

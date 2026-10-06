@@ -51,37 +51,13 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
       endpointSlug = endpoint.slug;
     } else if (getToken()) {
       // Logged in — try to reuse an existing endpoint from account
-      try {
-        const endpoints = await listEndpoints();
-        if (endpoints.length > 0) {
-          // Pick the most recently created endpoint
-          const latest = endpoints[0];
-          endpointSlug = latest.slug;
-          log.info(`Using endpoint ${endpointSlug} from your account`);
-          if (endpoints.length > 1) {
-            log.dim(`${endpoints.length} endpoints on your account — use hooksense listen <slug> to pick another`);
-          }
-        } else {
-          log.info("No endpoints found, creating new one...");
-          const endpoint = await createEndpoint();
-          endpointSlug = endpoint.slug;
-        }
-      } catch {
-        // Fallback to lastSlug or create new
-        const lastSlug = getLastSlug();
-        if (lastSlug) {
-          try {
-            const endpoint = await getEndpoint(lastSlug);
-            endpointSlug = endpoint.slug;
-            log.info(`Reusing endpoint ${endpointSlug}`);
-          } catch {
-            const endpoint = await createEndpoint();
-            endpointSlug = endpoint.slug;
-          }
-        } else {
-          const endpoint = await createEndpoint();
-          endpointSlug = endpoint.slug;
-        }
+      const endpoints = await listEndpoints();
+      if (endpoints.length > 0) {
+        endpointSlug = endpoints[0].slug;
+        log.info(`Using endpoint ${endpointSlug} from your account`);
+      } else {
+        log.info("No endpoints found, creating new one...");
+        endpointSlug = (await createEndpoint()).slug;
       }
     } else {
       // Anonymous — use lastSlug or create new
@@ -188,6 +164,8 @@ export async function listenCommand(slug: string | undefined, options: ListenOpt
           }
         });
       },
+      onConnect: () => log.success("Live connection established"),
+      onFatal: (message) => { log.error(message); process.exitCode = 1; },
       onDisconnect: () => {
         log.disconnected();
       },

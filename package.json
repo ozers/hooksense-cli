@@ -1,7 +1,7 @@
 {
   "name": "hooksense",
-  "version": "0.4.0",
-  "description": "CLI tool for HookSense — capture, inspect, and forward webhooks",
+  "version": "0.4.1",
+  "description": "CLI tool for HookSense \u2014 capture, inspect, and forward webhooks",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
@@ -10,7 +10,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "npm run build && node --test test/*.test.mjs"
   },
   "files": [
     "dist"
@@ -34,5 +35,8 @@
     "@types/ws": "^8.5.13",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

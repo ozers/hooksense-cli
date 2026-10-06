@@ -59,7 +59,7 @@ export const log = {
     if (filter) {
       console.log(`  ${pc.dim("Filter:")}    ${methodColor(filter)} ${pc.dim("only")}`);
     }
-    console.log(`  ${pc.dim("Status:")}    ${pc.green("● Connected")}`);
+    console.log(`  ${pc.dim("Status:")}    ${pc.yellow("● Connecting…")}`);
     console.log();
   },
 
@@ -103,7 +103,7 @@ export const log = {
   },
 
   connected() {
-    console.log(`  ${pc.dim("Status:")}    ${pc.green("● Connected")}`);
+    console.log(`  ${pc.dim("Status:")}    ${pc.yellow("● Connecting…")}`);
   },
 
   disconnected() {

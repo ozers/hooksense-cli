@@ -14,7 +14,7 @@ const program = new Command();
 program
   .name("hooksense")
   .description("HookSense CLI — capture, inspect, and forward webhooks")
-  .version("0.4.0")
+  .version("0.4.1")
   .option("--api <url>", "API server URL (default: https://hooksense.com)")
   .hook("preAction", (thisCommand) => {
     const apiUrl = thisCommand.opts().api;

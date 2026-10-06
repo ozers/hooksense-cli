@@ -44,6 +44,8 @@ npx hooksense listen --forward http://localhost:3000/webhook
 
 ## Install
 
+Requires Node.js 22 or newer.
+
 ```bash
 npm install -g hooksense
 ```
@@ -91,13 +93,31 @@ hooksense login
 hooksense logout
 ```
 
-### `hooksense status`
+### `hooksense list` / `hooksense inspect <slug>`
 
-Show current login and connection status.
+List your account's endpoints or open one in the dashboard.
 
 ```bash
-hooksense status
+hooksense list
+hooksense inspect abc12345
 ```
+
+### `hooksense replay <id>`
+
+Fetch a captured request and replay it **from your machine**, so localhost targets work.
+The original method, body, and query parameters are preserved; transport headers are rebuilt.
+The target URL's explicit query parameters take precedence. Forwarding times out after 30 seconds
+and does not follow redirects.
+
+```bash
+hooksense replay <request-id> --port 3000
+hooksense replay <request-id> --forward http://localhost:3000/webhook
+hooksense listen abc12345 --port 3000 --latest 5
+```
+
+Browser login saves a session credential. Private live feeds use that session too.
+After your session expires or is revoked (including a password change), run `hooksense login` again.
+An authorization rejection stops the listener instead of retrying indefinitely.
 
 ## Options
 
